@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="index.css">
+  <title>Chat con HAVI</title>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="phone-screen">
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <span>14:44</span>
+
+      </div>
+
+      <!-- Chat Header -->
+      <div class="chat-header">
+        <a href="index.html" class="back-btn">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </a>
+        <div class="chat-header-info">
+          <div class="havi-mini"><div class="havi-mini-inner">H</div></div>
+          <div>
+            <div class="chat-title">HAVI</div>
+            <div class="chat-status">En línea</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="messages" id="messages">
+        <div class="day-divider">Hoy</div>
+        
+      </div>
+
+      <!-- Input -->
+      <div class="chat-input">
+        
+        <input type="text" id="msgInput" placeholder="Escribe un mensaje..." />
+        <button class="send-btn" id="sendBtn">➤</button>
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
