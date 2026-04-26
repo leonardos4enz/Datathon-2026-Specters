@@ -11,7 +11,7 @@
     <div class="phone-screen">
       <!-- Status Bar -->
       <div class="status-bar">
-        <span>14:44</span>
+        <span id="statusClock">14:44</span>
 
       </div>
 
@@ -45,6 +45,17 @@
       </div>
     </div>
   </div>
+  <script>
+    function updateClock() {
+      const d = new Date();
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      const el = document.getElementById('statusClock');
+      if (el) el.textContent = `${hh}:${mm}`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
   <script src="index.js?v=1"></script>
 </body>
 </html>

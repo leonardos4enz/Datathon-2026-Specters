@@ -14,7 +14,11 @@ const USER = JSON.parse(localStorage.getItem('havi_user')) || {
   ocupacion: 'Empleado',
   nivel_educativo: 'Universidad',
   canal_apertura: 'app',
+  classificationString: '',
 };
+
+window.USER_ID = USER.user_id;
+window.CLASSIFICATION_STRING = USER.classificationString || '';
 
 // Se genera una sola vez por sesión de chat
 const SESSION_ID = Math.floor(1000000000 + Math.random() * 9000000000).toString();
@@ -39,8 +43,8 @@ function appendTyping() {
   div.classList.add('message', 'havi');
   div.id = 'typing';
   const bubble = document.createElement('div');
-  bubble.classList.add('bubble');
-  bubble.textContent = '...';
+  bubble.classList.add('bubble', 'typing-bubble');
+  bubble.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
   div.appendChild(bubble);
   messagesEl.appendChild(div);
   messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -68,6 +72,8 @@ async function sendMessage() {
         session_id: SESSION_ID,
         mensaje: text,
         ...USER,
+        user_id: window.USER_ID,
+        classificationString: window.CLASSIFICATION_STRING,
       }),
     });
 
