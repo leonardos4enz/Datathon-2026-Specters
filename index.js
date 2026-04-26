@@ -1,8 +1,19 @@
 const WEBHOOK_URL = 'https://n8n-n8n.ppnoc4.easypanel.host/webhook/b433705d-ac26-4c0a-a4f5-4a945a31efb9';
 
-const USER = {
-  id: 'USR-00001',
-  nombre: 'Jose',
+const USER = JSON.parse(localStorage.getItem('havi_user')) || {
+  user_id: 'TEST_01',
+  nombre: 'User',
+  edad: 25,
+  ingreso_mensual_mxn: 35000,
+  score_buro: 720,
+  antiguedad_dias: 5,
+  num_productos_activos: 1,
+  es_hey_pro: 1,
+  nomina_domiciliada: 0,
+  recibe_remesas: 0,
+  ocupacion: 'Empleado',
+  nivel_educativo: 'Universidad',
+  canal_apertura: 'app',
 };
 
 // Se genera una sola vez por sesión de chat
@@ -55,9 +66,8 @@ async function sendMessage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         session_id: SESSION_ID,
-        usuario_id: USER.id,
-        nombre: USER.nombre,
         mensaje: text,
+        ...USER,
       }),
     });
 

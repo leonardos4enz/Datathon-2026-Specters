@@ -19,7 +19,7 @@
       <div class="header">
         <div class="header-left">
           <span class="brand">hey,</span>
-          <span class="user-name">Jose</span>
+          <span class="user-name" id="userName">User</span>
         </div>
         <div class="header-icons">
           <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
@@ -83,5 +83,10 @@
       </div>
     </div>
   </div>
+  <script>
+    const u = JSON.parse(localStorage.getItem('havi_user'));
+    if (!u) { window.location.href = 'users.html'; }
+    else { document.getElementById('userName').textContent = u.nombre; }
+  </script>
 </body>
 </html>

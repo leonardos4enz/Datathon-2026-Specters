@@ -126,3 +126,25 @@ body {
 .havi-wrap { text-decoration: none; color: inherit; }
 .havi-button { width: 58px; height: 58px; border-radius: 50%; background: conic-gradient(from 180deg, #FF5E5E, #FFD93D, #4D96FF, #FF5E5E); padding: 3px; display: flex; justify-content: center; align-items: center; text-decoration: none; animation: havi-spin 3s linear infinite, havi-pulse 2s ease-in-out infinite; }
 .havi-inner { width: 100%; height: 100%; background: #0a0a0e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 12px; animation: havi-counter 3s linear infinite; }
+
+/* USER SELECTOR */
+.selector-body { background: #141414; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 0; }
+.selector-wrap { display: flex; flex-direction: column; align-items: center; gap: 48px; }
+.selector-title { color: #fff; font-size: 34px; font-weight: 400; letter-spacing: 1px; }
+.selector-grid { display: flex; gap: 36px; flex-wrap: wrap; justify-content: center; }
+.profile-card {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.profile-card:hover { transform: scale(1.1); }
+.profile-card:hover .profile-avatar { box-shadow: 0 0 0 3px #fff; }
+.profile-card:hover .profile-name { color: #fff; }
+.profile-avatar {
+  width: 130px; height: 130px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 38px; font-weight: 700; color: #fff;
+  letter-spacing: 1px;
+  transition: box-shadow 0.2s ease;
+}
+.profile-name { color: #808080; font-size: 16px; font-weight: 500; letter-spacing: 0.5px; transition: color 0.2s ease; }
