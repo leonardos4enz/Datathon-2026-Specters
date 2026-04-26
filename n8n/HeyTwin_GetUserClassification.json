@@ -1,0 +1,108 @@
+{
+  "name": "HeyTwin_GetUserClassification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "1adfc1df-3641-43b8-b420-54fb19a9b85f",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d6f2b5bb-eeaf-49cc-a930-29d8c45d4dec",
+      "name": "Webhook",
+      "webhookId": "1adfc1df-3641-43b8-b420-54fb19a9b85f"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT segmento_final FROM hey_segmentos WHERE user_id = '{{ $json.usuarioId }}' LIMIT 1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        448,
+        0
+      ],
+      "id": "c4c5791e-7613-4cfe-8d17-79baa97c117d",
+      "name": "Obtener Clasificación de Usuario",
+      "credentials": {
+        "postgres": {
+          "id": "ve1oYq1ILUSiPDqy",
+          "name": "datathon"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "90471dab-afe5-4b6b-9be8-a714462d1892",
+              "name": "usuarioId",
+              "value": "={{ $json.body.user_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        0
+      ],
+      "id": "84bfa7c1-fa33-405e-bbac-29ede7c54191",
+      "name": "Webhook Input"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Webhook Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Input": {
+      "main": [
+        [
+          {
+            "node": "Obtener Clasificación de Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Clasificación de Usuario": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c213d868-b2e6-427f-b622-92841486c007",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "16824bd5a53d2584f04402240ba338626915101f49b67d20264ec07211610bb2"
+  },
+  "id": "lxssgQvKa8cQ7CDG",
+  "tags": []
+}

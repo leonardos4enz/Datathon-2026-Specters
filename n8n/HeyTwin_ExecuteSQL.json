@@ -1,0 +1,228 @@
+{
+  "name": "HeyTwin_ExecuteSQL",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "f77ba4cd-67ca-4ab4-8c00-be8a38152f6e",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {
+          "allowedOrigins": "https://datathon-2026-specters.vercel.app"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -640,
+        32
+      ],
+      "id": "4ec90556-cd69-4120-acad-32925550beac",
+      "name": "Webhook",
+      "webhookId": "f77ba4cd-67ca-4ab4-8c00-be8a38152f6e"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "90471dab-afe5-4b6b-9be8-a714462d1892",
+              "name": "sql_query",
+              "value": "={{ $json.body.sql_query }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -416,
+        32
+      ],
+      "id": "5ce22ddd-09b2-488e-a880-80a527d5bbde",
+      "name": "Webhook Input"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n// VALIDADOR SQL — DEFENSA EN PROFUNDIDAD\n// Capa 1: Allowlist (solo SELECT)\n// Capa 2: Denylist de tokens peligrosos\n// Capa 3: Validación estructural\n// Capa 4: LIMIT forzado\n// ============================================================\n\nconst raw = ($input.first().json.sql_query || '').toString();\n\n// --- Helpers ---\nconst reject = (reason) => [{\n  json: {\n    valid: false,\n    error: 'Query rechazado por seguridad',\n    reason_internal: reason,\n    sql_query: ''\n  }\n}];\n\n// --- 0. Sanity checks básicos ---\nif (!raw || typeof raw !== 'string') return reject('empty_or_invalid_type');\nif (raw.length > 5000) return reject('too_long');\nif (raw.length < 10) return reject('too_short');\n\n// Trim y normalizar espacios\nlet sql = raw.trim();\n\n// Quitar punto y coma final si lo trae\nsql = sql.replace(/;+\\s*$/g, '').trim();\n\n// --- 1. ALLOWLIST: solo SELECT al inicio ---\nif (!/^\\s*SELECT\\s/i.test(sql)) {\n  return reject('not_a_select');\n}\n\n// --- 2. DENYLIST: tokens peligrosos ---\n// Buscamos como palabras completas (\\b) para no falsos positivos\nconst denyPatterns = [\n  /\\bINSERT\\b/i,\n  /\\bUPDATE\\b/i,\n  /\\bDELETE\\b/i,\n  /\\bDROP\\b/i,\n  /\\bALTER\\b/i,\n  /\\bTRUNCATE\\b/i,\n  /\\bCREATE\\b/i,\n  /\\bGRANT\\b/i,\n  /\\bREVOKE\\b/i,\n  /\\bMERGE\\b/i,\n  /\\bCALL\\b/i,\n  /\\bEXEC\\b/i,\n  /\\bEXECUTE\\b/i,\n  /\\bCOPY\\b/i,\n  /\\\\copy/i,\n  /\\bDO\\s+\\$\\$/i,\n  /\\bRETURNING\\b/i,\n  // Funciones peligrosas de Postgres\n  /\\bpg_sleep\\b/i,\n  /\\bpg_read_file\\b/i,\n  /\\bpg_ls_dir\\b/i,\n  /\\blo_import\\b/i,\n  /\\blo_export\\b/i,\n  /\\bdblink\\b/i,\n  /\\bcurrent_setting\\b/i,\n  /\\bset_config\\b/i,\n  // Cosas raras de SQL Server / MySQL por si acaso\n  /\\bxp_\\w+/i,\n  /\\bsp_executesql\\b/i,\n  /\\bINTO\\s+OUTFILE\\b/i,\n  /\\bLOAD_FILE\\b/i,\n  // Stacked queries / comentarios\n  /;/,\n  /--/,\n  /\\/\\*/,\n  /\\*\\//,\n  // System catalogs sensibles\n  /\\bpg_shadow\\b/i,\n  /\\bpg_authid\\b/i,\n  /\\bpg_user\\b/i,\n  /\\binformation_schema\\.\\s*\\w*password/i\n];\n\nfor (const pattern of denyPatterns) {\n  if (pattern.test(sql)) {\n    return reject('denied_token:' + pattern.source);\n  }\n}\n\n// --- 3. VALIDACIÓN ESTRUCTURAL ---\n\n// Solo una sentencia (chequeo redundante con el de ; pero por si acaso)\nconst statementCount = (sql.match(/SELECT/gi) || []).length;\n// Permitimos subqueries pero limitamos el anidamiento extremo\nif (statementCount > 5) {\n  return reject('too_many_selects');\n}\n\n// Debe consultar las tablas permitidas (allowlist de tablas)\nconst allowedTables = /\\b(hey_transacciones|hey_productos|categorias_acciones)\\b/i;\nif (!allowedTables.test(sql)) {\n  return reject('no_allowed_table_referenced');\n}\n\n// Bloquear acceso a tablas/esquemas de sistema\nif (/\\b(pg_catalog|pg_\\w+|information_schema)\\b/i.test(sql)) {\n  return reject('system_catalog_access');\n}\n\n// Paréntesis balanceados (anti-evasion básica)\nconst open = (sql.match(/\\(/g) || []).length;\nconst close = (sql.match(/\\)/g) || []).length;\nif (open !== close) {\n  return reject('unbalanced_parens');\n}\n\n// Comillas balanceadas (cuenta simples no escapadas)\nconst singleQuotes = (sql.match(/'/g) || []).length;\nif (singleQuotes % 2 !== 0) {\n  return reject('unbalanced_quotes');\n}\n\n// --- 4. FORZAR LIMIT ---\n// Si no trae LIMIT, le agregamos uno máximo\nlet finalSql = sql;\nif (!/\\bLIMIT\\s+\\d+/i.test(finalSql)) {\n  finalSql = finalSql + ' LIMIT 1000';\n} else {\n  // Si trae LIMIT pero es absurdo, lo capamos\n  finalSql = finalSql.replace(/\\bLIMIT\\s+(\\d+)/i, (m, n) => {\n    const num = parseInt(n, 10);\n    return 'LIMIT ' + Math.min(num, 1000);\n  });\n}\n\n// --- OK ---\nreturn [{\n  json: {\n    valid: true,\n    sql_query: finalSql,\n    original_length: raw.length,\n    final_length: finalSql.length\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        32
+      ],
+      "id": "63f8ffbc-f6c6-4245-b648-bc42b1e0e416",
+      "name": "Validador SQL"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "22222222-2222-2222-2222-222222222222",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        32,
+        32
+      ],
+      "id": "080dc2c9-8d5b-4e80-9686-930b6b4b6c30",
+      "name": "¿Query válido?"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.sql_query }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        256,
+        -64
+      ],
+      "id": "c95cf90d-1835-4cee-978b-30389b277877",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "ve1oYq1ILUSiPDqy",
+          "name": "datathon"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"error\": \"Query rechazado por validación de seguridad\",\n  \"data\": []\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        256,
+        128
+      ],
+      "id": "17366932-2ff4-4867-817e-831b406e2ba7",
+      "name": "Rechazo Seguro"
+    },
+    {
+      "parameters": {
+        "content": "## Seguridad",
+        "height": 225,
+        "width": 412
+      },
+      "id": "088b469b-d9c1-42a9-823c-c3d8a7247d55",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Query dinamico",
+        "height": 241,
+        "width": 204,
+        "color": 5
+      },
+      "id": "ab733abb-b9d5-4461-93e1-508384d0bdea",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        208,
+        -128
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Webhook Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Input": {
+      "main": [
+        [
+          {
+            "node": "Validador SQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validador SQL": {
+      "main": [
+        [
+          {
+            "node": "¿Query válido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Query válido?": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazo Seguro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "944105f0-6792-4c54-83c8-73b469b5456b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "16824bd5a53d2584f04402240ba338626915101f49b67d20264ec07211610bb2"
+  },
+  "id": "MPe1YrXqkqNVGK34",
+  "tags": []
+}
