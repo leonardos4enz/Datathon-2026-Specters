@@ -502,4 +502,4 @@ msgInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') sendMessage();
 });
 
-appendMessage('¡Hola! Soy HAVI, tu asistente financiero. ¿En qué te puedo ayudar hoy?', 'bot');
+appendMessage('¡Hola! Soy HAVI Twin, tu asistente financiero. ¿En qué te puedo ayudar hoy?', 'bot');
