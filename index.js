@@ -2,7 +2,7 @@ const WEBHOOK_URL = 'https://n8n-n8n.ppnoc4.easypanel.host/webhook/b433705d-ac26
 
 const USER = {
   id: 'USR-00001',
-  nombre: 'User',
+  nombre: 'Jose',
 };
 
 // Se genera una sola vez por sesión de chat
