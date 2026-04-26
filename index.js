@@ -71,8 +71,8 @@ async function sendMessage() {
       body: JSON.stringify({
         session_id: SESSION_ID,
         mensaje: text,
-        ...USER,
         user_id: window.USER_ID,
+        nombre: USER.nombre,
         classificationString: window.CLASSIFICATION_STRING,
       }),
     });

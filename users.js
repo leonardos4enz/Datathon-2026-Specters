@@ -86,7 +86,8 @@ async function fetchClassification(userId) {
       body: JSON.stringify({ user_id: userId }),
     });
     const data = await res.json();
-    return data.classificationString ?? data.classification ?? data.output ?? '';
+    const item = Array.isArray(data) ? data[0] : data;
+    return item?.segmento_final ?? item?.classificationString ?? item?.classification ?? item?.output ?? '';
   } catch (err) {
     console.error('No se pudo obtener classificationString', err);
     return '';
